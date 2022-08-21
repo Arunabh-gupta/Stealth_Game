@@ -4,51 +4,73 @@ using UnityEngine;
 
 public class guard : MonoBehaviour
 {
+    GameObject player;
     public Transform pathHolder;
     Vector3[] waypoints;
     public float speed = 5f;
     public float rotatespeed = 5f;
     public float waitTime = 1f;
+
+    public Light spotLight;
+    public float viewDistance;
+    float viewAngle;
     private void Start()
     {
+        player = GameObject.FindGameObjectWithTag("Player");
+        viewAngle = spotLight.spotAngle;
         waypoints = new Vector3[pathHolder.childCount];
         for (int i = 0; i < waypoints.Length; i++)
         {
             waypoints[i] = pathHolder.GetChild(i).position;
-		waypoints[i].y = transform.position.y;
+            waypoints[i].y = transform.position.y;
         }
-	  StartCoroutine(TraversePath(waypoints));
+        StartCoroutine(TraversePath(waypoints));
     }
+
     IEnumerator TraversePath(Vector3[] waypoints)
     {
         int targetwaypointIndex = 1;
         Vector3 targetwaypoint = waypoints[targetwaypointIndex];
-	  transform.LookAt(targetwaypoint);
+        transform.LookAt(targetwaypoint);
         while (true)
         {
-		// moving the guard at every waypoint
+            // moving the guard at every waypoint
             transform.position = Vector3.MoveTowards(transform.position, targetwaypoint, speed * Time.deltaTime);
             if (transform.position == targetwaypoint)
             {
                 yield return new WaitForSeconds(waitTime);
                 targetwaypointIndex = (targetwaypointIndex + 1) % waypoints.Length;
                 targetwaypoint = waypoints[targetwaypointIndex];
-		    yield return StartCoroutine(turntoFace(targetwaypoint));
+                yield return StartCoroutine(turntoFace(targetwaypoint));
             }
             yield return null;
         }
     }
-    
-    IEnumerator turntoFace(Vector3 Looktarget){
-		Vector3 dirToLook = (Looktarget-transform.position).normalized;
-		float lookAngle = 90-Mathf.Atan2(dirToLook.z, dirToLook.x) * Mathf.Rad2Deg;
-		while(Mathf.DeltaAngle(transform.eulerAngles.y, lookAngle) > 0.01f){
-			float angle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, lookAngle, rotatespeed*Time.deltaTime);
-			transform.eulerAngles = Vector3.up * angle;
-			yield return null;
-		}
-    }
 
+    IEnumerator turntoFace(Vector3 Looktarget)
+    {
+        Vector3 dirToLook = (Looktarget - transform.position).normalized;
+        float lookAngle = 90 - Mathf.Atan2(dirToLook.z, dirToLook.x) * Mathf.Rad2Deg;
+        while (Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, lookAngle)) > 0.01f)
+        {
+            float angle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, lookAngle, rotatespeed * Time.deltaTime);
+            transform.eulerAngles = Vector3.up * angle;
+            yield return null;
+        }
+    }
+    bool CanSeePlayer()
+    {
+        if ((player.transform.position - transform.position).magnitude < viewDistance)
+        {
+            Vector3 dirtoPlayer = player.transform.position - transform.position;
+            float angleBetweenPlayerandGuard = Vector3.Angle(transform.forward, dirtoPlayer);
+            if (angleBetweenPlayerandGuard < viewAngle / 2f)
+            {
+                
+            }
+        }
+        return false;
+    }
     private void OnDrawGizmos()
     {
         Vector3 startPosition = pathHolder.GetChild(0).position;
@@ -61,5 +83,7 @@ public class guard : MonoBehaviour
             prevPosition = waypoint.position;
         }
         Gizmos.DrawLine(prevPosition, startPosition);
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(transform.position, transform.forward * viewDistance);
     }
 }
