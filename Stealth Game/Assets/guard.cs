@@ -14,10 +14,14 @@ public class guard : MonoBehaviour
     public Light spotLight;
     public float viewDistance;
     float viewAngle;
+    public LayerMask viewMask;
+    Color originalSpotlightColor;
+    public UiManager uiManager;
     private void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player");
         viewAngle = spotLight.spotAngle;
+        originalSpotlightColor = spotLight.color;
         waypoints = new Vector3[pathHolder.childCount];
         for (int i = 0; i < waypoints.Length; i++)
         {
@@ -58,6 +62,17 @@ public class guard : MonoBehaviour
             yield return null;
         }
     }
+    private void Update() {
+        if(CanSeePlayer()){
+            Debug.Log("Player Detected");
+            spotLight.color = Color.red;
+            uiManager.showGameLoseUI();
+            uiManager.newScene();
+        }
+        else{
+            spotLight.color = originalSpotlightColor;
+        }
+    }
     bool CanSeePlayer()
     {
         if ((player.transform.position - transform.position).magnitude < viewDistance)
@@ -66,7 +81,9 @@ public class guard : MonoBehaviour
             float angleBetweenPlayerandGuard = Vector3.Angle(transform.forward, dirtoPlayer);
             if (angleBetweenPlayerandGuard < viewAngle / 2f)
             {
-                
+                if(!Physics.Linecast(transform.position, player.transform.position, viewMask)){ // to check for inline obstacles
+                    return true;
+                }
             }
         }
         return false;

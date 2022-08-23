@@ -13,6 +13,8 @@ public class Player : MonoBehaviour
     
     Vector3 velocity;
     public Rigidbody rb;
+    public UiManager UImanager;
+    bool gameFinish = false;
     private void Start() {
         rb = GetComponent<Rigidbody>();
     }
@@ -26,9 +28,19 @@ public class Player : MonoBehaviour
         // transform.eulerAngles = Vector3.up * angle;
         // transform.Translate(transform.forward * MoveSpeed * Time.deltaTime * smoothInputMgnitude, Space.World);
         velocity = transform.forward * MoveSpeed * smoothInputMgnitude;
+        if(gameFinish == true){
+            UImanager.newScene();
+        }
     }
     private void FixedUpdate() {
         rb.MoveRotation(Quaternion.Euler(Vector3.up * angle));
         rb.MovePosition(rb.position + velocity * Time.deltaTime);
+    }
+    private void OnTriggerEnter(Collider other) {
+        if(other.tag == "Finish"){
+            UImanager.showGameWinUI();
+            // UImanager.newScene();
+            gameFinish = true;
+        }
     }
 }
